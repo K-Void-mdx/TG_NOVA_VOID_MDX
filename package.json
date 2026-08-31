@@ -1,0 +1,21 @@
+{
+  "name": "tg-nova-void-mdx",
+  "version": "1.0.0",
+  "private": true,
+  "description": "NOVA_VOID MDX — Telegram-first control plane driving multi-session WhatsApp bots via Baileys.",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "test": "node --test test/*.test.js",
+    "check": "find src -name '*.js' -print0 | xargs -0 -n1 node --check"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@whiskeysockets/baileys": "7.0.0-rc13",
+    "long": "^5.2.3",
+    "pino": "^10.0.0"
+  }
+}
