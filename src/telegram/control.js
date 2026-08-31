@@ -1,6 +1,6 @@
 import { createTelegramClient } from './bot-client.js';
 import { createMembershipGate } from './membership-gate.js';
-import { telegramTextPayload, verifiedCard, missingTargetsCard, gateKeyboard, telegramChatUrl } from './format.js';
+import { telegramTextPayload, menuPanelCard, missingTargetsCard, gateKeyboard, menuKeyboard, telegramChatUrl } from './format.js';
 import { pairingCard, pairingKeyboard, pairingStatusToast } from './pair-cards.js';
 import { createStartCommand } from '../commands/telegram/start.js';
 import { createMenuCommand } from '../commands/telegram/menu.js';
@@ -162,7 +162,15 @@ export function startControlPlane({ env, sessions, logger = console, clientFacto
       const result = await gate.verify(userId, { force: true });
       if (result.ok) {
         await answer('✅ Verified — commands unlocked');
-        await client.editMessageText(chatId, messageId, { text: verifiedCard() });
+        const channelUrl = telegramChatUrl(env.telegramChannel);
+        const groupUrl = telegramChatUrl(env.telegramGroup);
+        const ownerUrl = env.telegramOwnerLink || '';
+        const commandNames = [...commands.values()].map((c) => `/${c.name}`);
+        await client.editMessageText(chatId, messageId, {
+          text: menuPanelCard({ botName: env.botName, commands: commandNames }),
+          parse_mode: 'HTML',
+          reply_markup: menuKeyboard({ channelUrl, groupUrl, ownerUrl }),
+        });
       } else {
         await answer('Membership still missing');
         await client.editMessageText(chatId, messageId, { text: missingTargetsCard(result.missing) });

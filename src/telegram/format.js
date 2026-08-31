@@ -102,6 +102,21 @@ export function verifiedCard() {
   return '✅ <b>ᴠᴇʀɪꜰɪᴇᴅ — ᴄᴏᴍᴍᴀɴᴅꜱ ᴜɴʟᴏᴄᴋᴇᴅ</b>';
 }
 
+/** Command menu card — what a verified user sees. Lists every Telegram command. */
+export function menuPanelCard({ botName = 'NOVA_VOID MDX', commands = [] } = {}) {
+  const lines = [
+    `<b>⚡ ${botName}</b> ᴄᴏɴᴛʀᴏʟ ᴘᴀɴᴇʟ`,
+    '',
+    '✅ ᴠᴇʀɪꜰɪᴇᴅ — ᴄᴏᴍᴍᴀɴᴅꜱ ᴜɴʟᴏᴄᴋᴇᴅ',
+    '',
+  ];
+  for (const command of commands) {
+    lines.push(`┊ <code>${escapeHtml(command)}</code>`);
+  }
+  lines.push('', 'ᴛᴀᴘ ᴀ ᴄᴏᴍᴍᴀɴᴅ ᴏʀ ᴜꜱᴇ /help ꜰᴏʀ ᴅᴇᴛᴀɪʟꜱ.');
+  return lines.join('\n');
+}
+
 /** Missing-target card — honest about exactly what is still required. */
 export function missingTargetsCard(missing = []) {
   const targets = [...new Set(missing)].join(', ');

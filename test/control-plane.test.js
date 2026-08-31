@@ -121,6 +121,17 @@ test('/start is reachable even for an unverified user (welcome + gate buttons)',
   assert.ok(sent.reply_markup?.inline_keyboard, 'gate buttons present');
 });
 
+test('/start reveals the command menu directly for an already-verified user (no second /start)', async () => {
+  const { client, send } = await bootPlane({ memberStatus: 'member' });
+  await send({ message: { chat: { id: 20, type: 'private' }, from: { id: REGULAR, first_name: 'Ali' }, text: '/start' } });
+  const sent = client.calls.sent.find((m) => m.chatId === 20);
+  assert.ok(sent, 'a reply was sent');
+  assert.match(sent.text, /ᴠᴇʀɪꜰɪᴇᴅ|verified/i, 'shows the verified state');
+  assert.match(sent.text, /\/pair/, 'the command menu is revealed, not the gate again');
+  assert.match(sent.text, /\/pairs/);
+  assert.ok(sent.reply_markup?.inline_keyboard, 'menu buttons are attached');
+});
+
 test('non-start command from an unverified user returns the membership gate card', async () => {
   const { client, send } = await bootPlane({ memberStatus: 'left' });
   await send({ message: { chat: { id: 2, type: 'private' }, from: { id: REGULAR }, text: '/menu' } });
@@ -227,11 +238,14 @@ test('cancel callback removes a pending attempt and toasts the result', async ()
   assert.equal(sessions.attempts.has('2347046855205'), false);
 });
 
-test('verify callback bypasses the cache and edits the card on success', async () => {
+test('verify callback bypasses the cache, then reveals the command menu', async () => {
   const { client, send } = await bootPlane({ memberStatus: 'member' });
   await send({ callback_query: { id: 'V1', from: { id: REGULAR }, data: 'verify', message: { chat: { id: 13, type: 'private' }, message_id: 103 } } });
   assert.ok(client.calls.answered.some((a) => a.cbqId === 'V1' && /verified/i.test(a.text)));
-  assert.ok(client.calls.edited.some((m) => m.messageId === 103 && /ᴠᴇʀɪꜰɪᴇᴅ|verified/i.test(m.text)));
+  const edit = client.calls.edited.find((m) => m.messageId === 103);
+  assert.match(edit.text, /ᴠᴇʀɪꜰɪᴇᴅ|verified/i);
+  assert.match(edit.text, /menu/, 'the menu is revealed immediately after verifying');
+  assert.ok(edit.reply_markup?.inline_keyboard, 'menu buttons are attached');
 });
 
 test('/unpair refuses a number that was never paired', async () => {
