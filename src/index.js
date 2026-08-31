@@ -5,7 +5,7 @@ import { installLogGuard } from './core/log-guard.js';
 installLogGuard();
 import { env, assertValidEnv } from './config/env.js';
 import { createNovaApplication } from './core/factory.js';
-import { createWaSessionManager } from './sessions/wa-session-manager.js';
+import { WaSessionManager } from './sessions/wa-session-manager.js';
 import { createWaSocket } from './sessions/wa-sdk.js';
 import { startControlPlane } from './telegram/control.js';
 import { maskJid } from './core/jid.js';
@@ -86,7 +86,7 @@ export async function startNovaVoid() {
     return app;
   };
 
-  const manager = createWaSessionManager({
+  const manager = new WaSessionManager({
     sessionsDir: env.sessionsDir,
     ownerUserIds: [env.telegramOwnerId].filter(Boolean),
     socketFactory: ({ authDir }) => createWaSocket({ authDir, versionFile: env.waVersionFile }),
