@@ -8,7 +8,7 @@
  * NEVER passed through this function (they ship as plain no-parse-mode text).
  */
 
-function escapeHtml(value = '') {
+export function escapeHtml(value = '') {
   return String(value)
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -89,7 +89,7 @@ export function menuKeyboard({ channelUrl, groupUrl, ownerUrl }) {
 /** The /start welcome card — small-caps bars, never in italic. */
 export function welcomeCard({ botName = 'NOVA_VOID MDX' } = {}) {
   return [
-    `<b>ᴡᴇʟᴄᴏᴍᴇ ᴛᴏ ${botName}</b> 🚀`,
+    `<b>ᴡᴇʟᴄᴏᴍᴇ ᴛᴏ ${escapeHtml(botName)}</b> 🚀`,
     '',
     'ᴊᴏɪɴ ᴛʜᴇ ᴄʜᴀɴɴᴇʟ ᴀɴᴅ ɢʀᴏᴜᴘ, ᴛʜᴇɴ ᴘʀᴇꜱꜱ ✓ ᴄʜᴇᴄᴋ ᴍᴇᴍʙᴇʀꜱʜɪᴘ ᴛᴏ ᴜɴʟᴏᴄᴋ ᴄᴏᴍᴍᴀɴᴅꜱ.',
     '',
@@ -105,7 +105,7 @@ export function verifiedCard() {
 /** Command menu card — what a verified user sees. Lists every Telegram command. */
 export function menuPanelCard({ botName = 'NOVA_VOID MDX', commands = [] } = {}) {
   const lines = [
-    `<b>⚡ ${botName}</b> ᴄᴏɴᴛʀᴏʟ ᴘᴀɴᴇʟ`,
+    `<b>⚡ ${escapeHtml(botName)}</b> ᴄᴏɴᴛʀᴏʟ ᴘᴀɴᴇʟ`,
     '',
     '✅ ᴠᴇʀɪꜰɪᴇᴅ — ᴄᴏᴍᴍᴀɴᴅꜱ ᴜɴʟᴏᴄᴋᴇᴅ',
     '',
@@ -119,7 +119,7 @@ export function menuPanelCard({ botName = 'NOVA_VOID MDX', commands = [] } = {})
 
 /** Missing-target card — honest about exactly what is still required. */
 export function missingTargetsCard(missing = []) {
-  const targets = [...new Set(missing)].join(', ');
+  const targets = [...new Set(missing)].map((t) => escapeHtml(String(t))).join(', ');
   return [
     '🚫 <b>ɴᴏᴛ ᴠᴇʀɪꜰɪᴇᴅ ʏᴇᴛ</b>',
     '',
