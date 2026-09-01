@@ -1,6 +1,6 @@
 import { createTelegramClient } from './bot-client.js';
 import { createMembershipGate } from './membership-gate.js';
-import { telegramTextPayload, menuPanelCard, missingTargetsCard, gateKeyboard, menuKeyboard, telegramChatUrl } from './format.js';
+import { telegramTextPayload, menuPanelCard, missingTargetsCard, gateKeyboard, menuKeyboard, telegramChatUrl, escapeHtml } from './format.js';
 import { pairingCard, pairingKeyboard, pairingStatusToast } from './pair-cards.js';
 import { getBrandImage } from '../core/brand-image.js';
 import { createStartCommand } from '../commands/telegram/start.js';
@@ -142,7 +142,13 @@ export function startControlPlane({ env, sessions, logger = console, clientFacto
     if (!command) {
       return sendHtml(
         chatId,
-        [`❓ <b>ᴜɴᴋɴᴏᴡɴ ᴄᴏᴍᴍᴀɴᴅ</b>`, '', `\`/${parsed.name}\` is not a Telegram command.`, '', 'Use /help for the full list.'].join('\n')
+        [
+          '❓ <b>ᴜɴᴋɴᴏᴡɴ ᴄᴏᴍᴍᴀɴᴅ</b>',
+          '',
+          `<code>/${escapeHtml(parsed.name)}</code> ɪꜱ ɴᴏᴛ ᴀ ᴛᴇʟᴇɢʀᴀᴍ ᴄᴏᴍᴍᴀɴᴅ.`,
+          '',
+          'ᴜꜱᴇ /help ꜰᴏʀ ᴛʜᴇ ꜰᴜʟʟ ʟɪꜱᴛ.',
+        ].join('\n')
       );
     }
 
@@ -152,7 +158,10 @@ export function startControlPlane({ env, sessions, logger = console, clientFacto
     }
 
     if (command.role === 'owner' && !gate.isOwner(userId)) {
-      return sendHtml(chatId, `🚫 <b>ᴀᴄᴄᴇꜱꜱ ʀᴇꜱᴛʀɪᴄᴛᴇᴅ</b> — \`/${command.name}\` ɪꜱ ᴏᴡɴᴇʀ-ᴏɴʟʏ.`);
+      return sendHtml(
+        chatId,
+        `🚫 <b>ᴀᴄᴄᴇꜱꜱ ʀᴇꜱᴛʀɪᴄᴛᴇᴅ</b> — <code>/${escapeHtml(command.name)}</code> ɪꜱ ᴏᴡɴᴇʀ-ᴏɴʟʏ.`
+      );
     }
 
     const ctx = {
@@ -177,7 +186,10 @@ export function startControlPlane({ env, sessions, logger = console, clientFacto
       await command.execute(ctx);
     } catch (error) {
       logger.error(`[ TELEGRAM ] /${command.name} failed: ${error?.message ?? error}`);
-      sendHtml(chatId, `🛠️ <b>ᴄᴏᴍᴍᴀɴᴅ ᴇʀʀᴏʀ</b> — \`/${command.name}\` ᴄᴏᴜʟᴅ ɴᴏᴛ ʙᴇ ᴄᴏᴍᴘʟᴇᴛᴇᴅ.`).catch(() => {});
+      sendHtml(
+        chatId,
+        `🛠️ <b>ᴄᴏᴍᴍᴀɴᴅ ᴇʀʀᴏʀ</b> — <code>/${escapeHtml(command.name)}</code> ᴄᴏᴜʟᴅ ɴᴏᴛ ʙᴇ ᴄᴏᴍᴘʟᴇᴛᴇᴅ.`
+      ).catch(() => {});
     }
   }
 
@@ -192,7 +204,7 @@ export function startControlPlane({ env, sessions, logger = console, clientFacto
     if (data === 'verify') {
       const result = await gate.verify(userId, { force: true });
       if (result.ok) {
-        await answer('✅ Verified — commands unlocked');
+        await answer('✅ ᴠᴇʀɪꜰɪᴇᴅ — ᴄᴏᴍᴍᴀɴᴅꜱ ᴜɴʟᴏᴄᴋᴇᴅ');
         const channelUrl = telegramChatUrl(env.telegramChannel);
         const groupUrl = telegramChatUrl(env.telegramGroup);
         const ownerUrl = env.telegramOwnerLink || '';
@@ -203,7 +215,7 @@ export function startControlPlane({ env, sessions, logger = console, clientFacto
           reply_markup: menuKeyboard({ channelUrl, groupUrl, ownerUrl }),
         });
       } else {
-        await answer('Membership still missing');
+        await answer('ᴍᴇᴍʙᴇʀꜱʜɪᴘ ꜱᴛɪʟʟ ᴍɪꜱꜱɪɴɢ');
         await client.editMessageText(chatId, messageId, { text: missingTargetsCard(result.missing) });
       }
       return;
@@ -217,15 +229,15 @@ export function startControlPlane({ env, sessions, logger = console, clientFacto
       const ownsAttempt = attempt && (String(attempt.userId) === userId || gate.isOwner(userId));
 
       if (action === 'copy') {
-        if (!ownsAttempt) return answer('This pairing attempt does not belong to you.');
-        if (!attempt?.code) return answer('No pair code available yet — press CHECK STATUS in a moment.');
+        if (!ownsAttempt) return answer('ᴛʜɪꜱ ᴘᴀɪʀɪɴɢ ᴀᴛᴛᴇᴍᴘᴛ ᴅᴏᴇꜱ ɴᴏᴛ ʙᴇʟᴏɴɢ ᴛᴏ ʏᴏᴜ.');
+        if (!attempt?.code) return answer('ɴᴏ ᴘᴀɪʀ ᴄᴏᴅᴇ ᴀᴠᴀɪʟᴀʙʟᴇ ʏᴇᴛ — ᴘʀᴇꜱꜱ ᴄʜᴇᴄᴋ ꜱᴛᴀᴛᴜꜱ ɪɴ ᴀ ᴍᴏᴍᴇɴᴛ.');
         // Telegram inline keyboards have no true clipboard button, so the code
         // is recalled into the toast so the user can copy it from there.
-        return answer(`Pair code for ${phone}: ${attempt.code}`);
+        return answer(`ᴘᴀɪʀ ᴄᴏᴅᴇ ꜰᴏʀ ${phone}: ${attempt.code}`);
       }
 
       if (action === 'status') {
-        if (!ownsAttempt && !gate.isOwner(userId)) return answer('This pairing attempt does not belong to you.');
+        if (!ownsAttempt && !gate.isOwner(userId)) return answer('ᴛʜɪꜱ ᴘᴀɪʀɪɴɢ ᴀᴛᴛᴇᴍᴘᴛ ᴅᴏᴇꜱ ɴᴏᴛ ʙᴇʟᴏɴɢ ᴛᴏ ʏᴏᴜ.');
         try {
           const snapshot = sessions.pairStatus(phone, { userId });
           await answer(pairingStatusToast(snapshot));
@@ -245,24 +257,24 @@ export function startControlPlane({ env, sessions, logger = console, clientFacto
             });
           }
         } catch (error) {
-          await answer(error?.message ?? 'Could not read pairing status.');
+          await answer(error?.message ?? 'ᴄᴏᴜʟᴅ ɴᴏᴛ ʀᴇᴀᴅ ᴘᴀɪʀɪɴɢ ꜱᴛᴀᴛᴜꜱ.');
         }
         return;
       }
 
       if (action === 'cancel') {
-        if (!ownsAttempt) return answer('This pairing attempt does not belong to you.');
+        if (!ownsAttempt) return answer('ᴛʜɪꜱ ᴘᴀɪʀɪɴɢ ᴀᴛᴛᴇᴍᴘᴛ ᴅᴏᴇꜱ ɴᴏᴛ ʙᴇʟᴏɴɢ ᴛᴏ ʏᴏᴜ.');
         try {
           sessions.cancel(phone, { userId });
-          await answer('Pairing cancelled — no session was created.');
+          await answer('ᴘᴀɪʀɪɴɢ ᴄᴀɴᴄᴇʟʟᴇᴅ — ɴᴏ ꜱᴇꜱꜱɪᴏɴ ᴡᴀꜱ ᴄʀᴇᴀᴛᴇᴅ.');
         } catch (error) {
-          await answer(error?.message ?? 'Could not cancel pairing.');
+          await answer(error?.message ?? 'ᴄᴏᴜʟᴅ ɴᴏᴛ ᴄᴀɴᴄᴇʟ ᴘᴀɪʀɪɴɢ.');
         }
         return;
       }
     }
 
-    await answer('Unknown action');
+    await answer('ᴜɴᴋɴᴏᴡɴ ᴀᴄᴛɪᴏɴ');
   }
 
   async function onUpdate(update) {
@@ -270,7 +282,7 @@ export function startControlPlane({ env, sessions, logger = console, clientFacto
     if (update?.callback_query) await handleCallback(update.callback_query);
   }
 
-  // ── Lifecycle ────────────────────────────────────────────────────────────
+  // ── Lifecycle ─────────────────────────────────────────────────────────
 
   /** getMe + begin long polling. Throws if the token is invalid. */
   async function start() {
