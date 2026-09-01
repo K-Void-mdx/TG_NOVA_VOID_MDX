@@ -12,6 +12,12 @@ import { createGenerateCommand } from '../commands/whatsapp/generate.js';
 import { createCoreCommands } from '../commands/whatsapp/core.js';
 import { createHelpCommand } from '../commands/whatsapp/help.js';
 import { createOwnerCommand } from '../commands/whatsapp/owner.js';
+import { createFunCommands } from '../commands/whatsapp/fun.js';
+import { createToolCommands } from '../commands/whatsapp/tools.js';
+import { createSearchCommands } from '../commands/whatsapp/search.js';
+import { createGroupCommands } from '../commands/whatsapp/group-admin.js';
+import { createMediaCommands } from '../commands/whatsapp/media.js';
+import { createSystemCommands } from '../commands/whatsapp/system.js';
 import { registerProviders } from '../ai/providers/index.js';
 
 /**
@@ -29,15 +35,18 @@ export function createNovaApplication({
   sudoJids = [],
   reply,
   sendMedia,
+  downloadMedia,
   imageProvider = null,
   videoProvider = null,
   storage = {},
   limiter,
-  prefixes = ['.', '/'],
+  prefixes = ['.'],
   botName = 'NOVA_VOID MDX',
   maxHistory = 40,
   trace,
   env = {},
+  settings = null,
+  group = null,
 }) {
   const sessions = new AISessionStore({
     maxMessages: Math.max(1, Number(maxHistory) || 40),
@@ -70,10 +79,13 @@ export function createNovaApplication({
     chatbot,
     send: reply,
     sendMedia,
+    downloadMedia,
     limiter: limiter ?? new RateLimiter({ windowMs: 15_000, max: 4 }),
     prefixes,
     botName,
     trace,
+    settings,
+    group,
   });
 
   clearCommands();
@@ -83,5 +95,11 @@ export function createNovaApplication({
   app.register(createGenerateCommand({ generation }));
   app.register(createOwnerCommand({ env }));
   app.register(createHelpCommand({ botName, prefix: Array.isArray(prefixes) ? prefixes[0] : '.' }));
+  app.register(createFunCommands());
+  app.register(createToolCommands());
+  app.register(createSearchCommands());
+  app.register(createMediaCommands());
+  app.register(createGroupCommands({ app }));
+  app.register(createSystemCommands({ app }));
   return { app, router, sessions, ai, generation, chatbot };
 }

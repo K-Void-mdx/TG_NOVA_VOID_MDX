@@ -49,6 +49,7 @@ export function createStatusCommand({ env, sessions }) {
         wa.sectionEnd()
       );
       lines.push('', wa.footer(env.botName));
+      if (typeof ctx.sendPhoto === 'function') return ctx.sendPhoto(lines.join('\n'));
       return ctx.reply(lines.join('\n'));
     },
   };

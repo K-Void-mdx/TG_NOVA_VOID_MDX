@@ -2,6 +2,7 @@ import { createTelegramClient } from './bot-client.js';
 import { createMembershipGate } from './membership-gate.js';
 import { telegramTextPayload, menuPanelCard, missingTargetsCard, gateKeyboard, menuKeyboard, telegramChatUrl } from './format.js';
 import { pairingCard, pairingKeyboard, pairingStatusToast } from './pair-cards.js';
+import { getBrandImage } from '../core/brand-image.js';
 import { createStartCommand } from '../commands/telegram/start.js';
 import { createMenuCommand } from '../commands/telegram/menu.js';
 import { createHelpCommand } from '../commands/telegram/help.js';
@@ -90,6 +91,34 @@ export function startControlPlane({ env, sessions, logger = console, clientFacto
     });
   }
 
+  /** Owner notification that also attaches the brand image (welcome cards). */
+  async function sendOwnerWithBrand(text) {
+    const image = await getBrandImage();
+    if (image && env.telegramOwnerId) {
+      try {
+        return await client.sendPhoto(env.telegramOwnerId, image, { caption: text });
+      } catch { /* fall through to text-only notify */ }
+    }
+    return sendOwner(text);
+  }
+
+  /** Sends a photo (with caption) to a chat, if a brand image is available.
+   *  Telegram captions max out at 1024 chars — longer text is sent as a
+   *  follow-up text message so nothing is ever truncated. */
+  async function sendPhotoToChat(chatId, caption, { markup } = {}) {
+    const image = await getBrandImage();
+    const text = String(caption ?? '');
+    if (image) {
+      try {
+        const head = text.length > 1024 ? text.slice(0, 1020) : text;
+        await client.sendPhoto(chatId, image, { caption: head, reply_markup: markup });
+        if (text.length > 1024) await sendHtml(chatId, text.slice(1020));
+        return;
+      } catch { /* fall through to text */ }
+    }
+    return sendHtml(chatId, text, { markup });
+  }
+
   // ── Update handlers ──────────────────────────────────────────────────────
 
   async function handleMessage(msg) {
@@ -137,6 +166,8 @@ export function startControlPlane({ env, sessions, logger = console, clientFacto
       reply: (waText, { markup } = {}) => sendStyled(chatId, waText, { markup }),
       replyHtml: (html, { markup } = {}) => sendHtml(chatId, html, { markup }),
       sendCard: (html, { markup } = {}) => sendHtml(chatId, html, { markup }),
+      // Image+text together (uses the brand image; falls back to text).
+      sendPhoto: (caption, opts = {}) => sendPhotoToChat(chatId, caption, opts),
       edit: (messageId, html, markup) =>
         client.editMessageText(chatId, messageId, { text: html, parse_mode: 'HTML', ...(markup ? { reply_markup: markup } : {}) }),
     };
@@ -262,5 +293,5 @@ export function startControlPlane({ env, sessions, logger = console, clientFacto
     client.stop();
   }
 
-  return { start, stop, sendOwner, client, gate, commands };
+  return { start, stop, sendOwner, sendOwnerWithBrand, sendPhotoToChat, client, gate, commands };
 }

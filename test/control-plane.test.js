@@ -18,7 +18,8 @@ function fakeTelegramClient({ memberStatus = 'member' } = {}) {
       return { key: { id: String(nextMessageId++) } };
     },
     getMe: async () => client.me,
-    async sendPhoto() {
+    async sendPhoto(chatId, buffer, { caption = '', reply_markup } = {}) {
+      calls.sent.push({ chatId, text: caption, reply_markup, photo: true });
       return { key: { id: String(nextMessageId++) } };
     },
     async sendContact() {

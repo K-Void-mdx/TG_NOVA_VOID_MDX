@@ -31,14 +31,16 @@ export function createStartCommand({ env }) {
       }
 
       if (verified) {
-        return ctx.replyHtml(menuPanelCard({ botName: env.botName, commands: TELEGRAM_COMMANDS }), {
-          markup: menuKeyboard({ channelUrl, groupUrl, ownerUrl }),
-        });
+        const card = menuPanelCard({ botName: env.botName, commands: TELEGRAM_COMMANDS });
+        const markup = menuKeyboard({ channelUrl, groupUrl, ownerUrl });
+        if (typeof ctx.sendPhoto === 'function') return ctx.sendPhoto(card, { markup });
+        return ctx.replyHtml(card, { markup });
       }
 
-      return ctx.replyHtml(welcomeCard({ botName: env.botName }), {
-        markup: gateKeyboard({ channelUrl, groupUrl, ownerUrl }),
-      });
+      const card = welcomeCard({ botName: env.botName });
+      const markup = gateKeyboard({ channelUrl, groupUrl, ownerUrl });
+      if (typeof ctx.sendPhoto === 'function') return ctx.sendPhoto(card, { markup });
+      return ctx.replyHtml(card, { markup });
     },
   };
 }

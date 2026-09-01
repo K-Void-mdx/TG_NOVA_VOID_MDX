@@ -18,7 +18,14 @@ const CHAT = '1203@g.us';
 const BOT = '2348000000009@s.whatsapp.net';
 
 // The complete documented WhatsApp command set of the control-plane project.
-const FINAL_COMMANDS = ['ai', 'chatbot', 'generate', 'help', 'menu', 'owner', 'ping', 'providers', 'status'];
+const FINAL_COMMANDS = [
+  'about', 'addsudo', 'ai', 'calc', 'chatbot', 'dare', 'delsudo', 'demote',
+  'fact', 'generate', 'google', 'group', 'help', 'joke', 'kick', 'link',
+  'listsudo', 'menu', 'news', 'owner', 'ping', 'play', 'promote', 'providers',
+  'qr', 'quote', 'rate', 'readqr', 'restart', 'revoke', 'riddle', 'setprefix',
+  'ship', 'status', 'sticker', 'tagall', 'time', 'toimg', 'truth', 'weather',
+  'wiki', 'yts',
+];
 
 function harness({ limiter, prefixes = ['.'], env = {}, imageProvider, withMedia = false } = {}) {
   const dir = mkdtempSync(join(tmpdir(), 'nova-dispatch-'));

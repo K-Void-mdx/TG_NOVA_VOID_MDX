@@ -73,6 +73,45 @@ test('an unused code expires and the socket is closed with a proper event', asyn
   assert.ok(session.sock === null || session.sock === undefined, 'socket closed after expiry');
 });
 
+test('a 515 restart during pairing reconnects instead of failing the attempt', async () => {
+  const { session, sock, fireConnection, events, wheel } = sessionHarness();
+  await session.start();
+  fireConnection({ qr: 'data:image/png;base64,AAA' });
+  await Promise.resolve();
+  assert.equal(session.state, 'pairing');
+  assert.equal(sock.requestedPhone, '2348012345678');
+
+  // WhatsApp 515 restart_required arrives just after a code was accepted —
+  // the signal to spin up a fresh socket and finish registering the device.
+  fireConnection({ connection: 'close', lastDisconnect: { error: { output: { statusCode: 515 } } } });
+
+  assert.equal(session.state, 'reconnecting', '515 must restart, not fail the pairing');
+  assert.ok(!events.some((e) => e.event === 'closed'), 'no permanent close/fail on 515');
+
+  // Firing the reconnect timer re-runs connect() against the socket factory.
+  await wheel.fireAll();
+  assert.equal(session.state, 'connecting', 'reconnect re-enters connecting on a fresh socket');
+  assert.ok(!events.some((e) => e.event === 'closed'), 'attempt still not failed after reconnect');
+});
+
+test('a non-515 close during a fresh pairing still fails the attempt', async () => {
+  const { session, fireConnection, events } = sessionHarness();
+  await session.start();
+  fireConnection({ qr: 'data:image/png;base64,AAA' });
+  await Promise.resolve();
+  assert.equal(session.state, 'pairing');
+
+  // e.g. a 408/500 transport error — a code is single-use per connection, so
+  // report it and let the user re-run /pair rather than silently reconnect.
+  fireConnection({ connection: 'close', lastDisconnect: { error: { output: { statusCode: 408 } } } });
+
+  assert.equal(session.state, 'stopped');
+  const closed = events.find((e) => e.event === 'closed');
+  assert.ok(closed, 'failed pairing emits a closed event');
+  assert.equal(closed.reason, 'connection-dropped-before-pairing');
+});
+
+
 test('message upserts outside notify are ignored; notify messages emit message events', async () => {
   const { session, sock, fireConnection } = sessionHarness();
   await session.start();

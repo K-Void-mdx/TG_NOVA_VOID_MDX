@@ -23,12 +23,15 @@ export class NovaApplication {
     sessions,
     reply,
     sendMedia,
+    downloadMedia,
     send,
     chatbot,
     limiter,
     prefixes = ['.'],
     botName = 'NOVA_VOID MDX',
     trace = () => {},
+    settings = null,
+    group = null,
   }) {
     this.botJid = botJid;
     // WhatsApp may address the linked account through an alternate LID
@@ -36,6 +39,13 @@ export class NovaApplication {
     this.botLid = botLid;
     this.ownerJids = ownerJids;
     this.sudoJids = sudoJids;
+    // Mutable runtime settings (prefix, dynamic sudo). When provided, they
+    // OVERRIDE the static config: dynamic sudo merges with env sudo, and a
+    // runtime-set prefix wins over the env prefix.
+    this.settings = settings;
+    // WhatsApp group API (metadata, participant updates, settings, mentions).
+    // Null on platforms (Telegram) where group admin verbs do not apply.
+    this.group = group;
     this.ai = ai;
     this.sessions = sessions;
     // ONE transport + ONE tracking owner. NovaApplication wraps the raw
@@ -53,6 +63,7 @@ export class NovaApplication {
           return sent;
         }
       : undefined;
+    this.downloadMedia = typeof downloadMedia === 'function' ? downloadMedia : undefined;
     this.chatbot = chatbot ?? new ChatbotState();
     this.limiter = limiter ?? new RateLimiter({ windowMs: 15_000, max: 4 });
     this.prefixes = Array.isArray(prefixes) && prefixes.length ? prefixes : ['.'];
@@ -109,6 +120,19 @@ export class NovaApplication {
     }
   }
 
+  /** Command prefixes actually in force — runtime .setprefix wins over env. */
+  effectivePrefixes() {
+    const dynamic = this.settings?.prefix;
+    return dynamic ? [dynamic] : this.prefixes;
+  }
+
+  /** Sudo JIDs actually in force — env list merged with runtime .addsudo. */
+  effectiveSudoJids() {
+    const dynamic = this.settings?.sudoJids ?? [];
+    if (!dynamic.length) return this.sudoJids;
+    return [...new Set([...this.sudoJids, ...dynamic])];
+  }
+
   register(commands) {
     const list = Array.isArray(commands) ? commands.flat(Infinity) : [commands];
     for (const command of list) {
@@ -154,11 +178,11 @@ export class NovaApplication {
     const role = resolveRole({
       sender: message.senderJid,
       ownerJids: this.ownerJids,
-      sudoJids: this.sudoJids,
+      sudoJids: this.effectiveSudoJids(),
       isGroupAdmin: Boolean(raw.isGroupAdmin),
     });
 
-    const parsed = parseCommand(message.text, this.prefixes);
+    const parsed = parseCommand(message.text, this.effectivePrefixes());
     if (parsed) {
       const command = getCommand(parsed.name);
       if (!command) {
@@ -188,6 +212,13 @@ export class NovaApplication {
           replyRaw: (text) => this.reply(message.chatJid, text, { format: 'raw' }),
           replyToRaw: (text) => this.replyTo(message, text, { format: 'raw' }),
           sendMedia: this.sendMedia ? (media) => this.sendMedia(message.chatJid, media) : undefined,
+          // Download bytes for a (quoted) media message — .sticker/.toimg/.readqr.
+          download: this.downloadMedia
+            ? (msgLike) => Promise.resolve(this.downloadMedia(msgLike))
+            : undefined,
+          // WhatsApp group admin verbs (null on non-WA transports).
+          group: this.group,
+          prefix: parsed?.prefix ?? (this.effectivePrefixes()[0] ?? '.'),
         });
         this.trace('response', { command: parsed.name });
       } catch (error) {

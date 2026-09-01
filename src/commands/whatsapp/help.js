@@ -3,8 +3,17 @@ import * as wa from '../../ui/wa-style.js';
 
 const sc = wa.smallCaps;
 
-const CATEGORY_ORDER = ['ai', 'general', 'core'];
-const CATEGORY_LABELS = { ai: 'AI SYSTEM', general: 'GENERAL', core: 'SYSTEM' };
+const CATEGORY_ORDER = ['ai', 'general', 'fun', 'tools', 'media', 'search', 'group', 'core'];
+const CATEGORY_LABELS = {
+  ai: 'AI SYSTEM',
+  general: 'GENERAL',
+  fun: 'FUN',
+  tools: 'TOOLS',
+  media: 'MEDIA',
+  search: 'SEARCH',
+  group: 'GROUP ADMIN',
+  core: 'SYSTEM',
+};
 
 /**
  * Real help system — deliberately separate from the command-only menu.

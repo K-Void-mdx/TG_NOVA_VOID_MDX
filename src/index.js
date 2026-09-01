@@ -6,9 +6,13 @@ installLogGuard();
 import { env, assertValidEnv } from './config/env.js';
 import { createNovaApplication } from './core/factory.js';
 import { WaSessionManager } from './sessions/wa-session-manager.js';
+import { downloadMediaMessage } from '@whiskeysockets/baileys';
 import { createWaSocket } from './sessions/wa-sdk.js';
 import { startControlPlane } from './telegram/control.js';
 import { maskJid } from './core/jid.js';
+import { getBrandImage } from './core/brand-image.js';
+import { BotSettings } from './core/settings.js';
+import { createGroupApi } from './core/group.js';
 import * as ui from './ui/banner.js';
 
 /**
@@ -23,6 +27,10 @@ export async function startNovaVoid() {
   assertValidEnv();
 
   await Promise.all([mkdir(env.sessionsDir, { recursive: true }), mkdir(env.aiStatesDir, { recursive: true })]);
+
+  // Warm the brand image in the background so the first /start, /ping or
+  // welcome card already has it cached (and never blocks command dispatch).
+  void getBrandImage();
 
   const log = (line) => console.log(line);
   log('');
@@ -46,7 +54,7 @@ export async function startNovaVoid() {
     }
   };
 
-  const buildApp = (session, sock) => {
+  const buildApp = ({ session, sock }) => {
     const { app } = createNovaApplication({
       botJid: sock?.user?.id ?? null,
       botLid: sock?.user?.lid ?? null,
@@ -55,6 +63,8 @@ export async function startNovaVoid() {
       botName: env.botName,
       prefixes: [env.prefix],
       maxHistory: env.aiMaxHistory,
+      settings,
+      group: createGroupApi(sock),
       storage: {
         sessionsDir: join(env.aiStatesDir, session.phone, 'history'),
         chatbotStateFile: join(env.aiStatesDir, session.phone, 'chatbot.json'),
@@ -74,6 +84,9 @@ export async function startNovaVoid() {
         if (media?.type === 'image' && media.buffer) {
           return sockNow.sendMessage(chatJid, { image: media.buffer, caption: media.caption ?? '' });
         }
+        if (media?.type === 'sticker' && media.buffer) {
+          return sockNow.sendMessage(chatJid, { sticker: media.buffer });
+        }
         if (media?.type === 'contact' && media.vcard) {
           return sockNow.sendMessage(chatJid, {
             contacts: { displayName: media.displayName ?? env.botName, contacts: [{ vcard: media.vcard }] },
@@ -81,10 +94,18 @@ export async function startNovaVoid() {
         }
         throw new Error('Unsupported media payload');
       },
+      // Media bytes for replied images/stickers (used by .sticker/.toimg/.readqr).
+      downloadMedia: async (msgLike) => {
+        const sockNow = session.sock;
+        if (!sockNow) throw new Error('WhatsApp transport is not connected');
+        return downloadMediaMessage(msgLike, 'buffer', {});
+      },
     });
     log(`[ SESSION ] ${session.phone} command dispatcher ready (${env.ownerJids.length || 0} configured WA owner jids)`);
     return app;
   };
+
+  const settings = new BotSettings(env.settingsFile);
 
   const manager = new WaSessionManager({
     sessionsDir: env.sessionsDir,
@@ -96,7 +117,9 @@ export async function startNovaVoid() {
   });
 
   const control = startControlPlane({ env, sessions: manager, logger: console });
-  broadcast = (text) => control.sendOwner(text);
+  // Owner notifications carry the brand image (welcome/online + explicit
+  // warnings) for consistent branding across the control plane.
+  broadcast = (text) => control.sendOwnerWithBrand(text);
 
   // Telegram first — fail fast on a bad token so the operator sees it.
   await control.start();

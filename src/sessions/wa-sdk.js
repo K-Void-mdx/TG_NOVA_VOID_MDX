@@ -18,8 +18,12 @@ import { createLoggerHook } from '../core/session-healer.js';
  *   - `authDir` holds the number's multi-file auth state; on first run it is
  *     empty, so the socket waits for the pairing flow instead of auto-auth.
  *   - the WA protocol version is disk-cached (one tiny network check max per
- *     week) — rc13's baked-in version is rejected by WhatsApp with a
- *     protocol <failure reason="405"> before pairing can start.
+ *     week) and resolved via fetchLatestBaileysVersion — this replicates the
+ *     PROVEN-WORKING configuration of the KING-VOID/NOVA_VOID lineage that
+ *     successfully links devices by pairing code. We intentionally do NOT set
+ *     a custom `browser` label: the working reference uses Baileys' default,
+ *     because a non-canonical browser[0] brand is what makes WhatsApp reject
+ *     the pairing-code companion_hello (issue #2560) and return a dead code.
  *   - each session gets its own pino logger wired to the signal-session
  *     auto-healer scoped to THAT session's authDir.
  */
@@ -27,9 +31,6 @@ import { createLoggerHook } from '../core/session-healer.js';
 export function createSessionLogger(level = 'warn') {
   return pino({ level });
 }
-
-/** "NOVA_VOID MDX" as the Baileys browser id — keeps device labels clean. */
-export const SOCK_BROWSER = ['NOVA_VOID MDX', 'Chrome', '120.0'];
 
 /**
  * @param {object} options
@@ -57,7 +58,6 @@ export async function createWaSocket({ authDir, versionFile, loggerLevel = 'warn
     markOnlineOnConnect: false,
     syncFullHistory: false,
     printQRInTerminal: false,
-    browser: SOCK_BROWSER,
   });
 
   // Persist refreshed credentials for this number whenever they change.

@@ -99,6 +99,11 @@ export const env = Object.freeze({
   get waVersionFile() {
     return join(this.dataDir, 'wa-version.json');
   },
+  // Brand image for welcome/menu/ping cards (fetched and cached at runtime).
+  brandImageUrl: value(process.env.BRAND_IMAGE_URL, 'https://files.catbox.moe/hh1cbl.jpg'),
+  get settingsFile() {
+    return join(this.dataDir, 'settings.json');
+  },
 });
 
 export function assertValidEnv() {

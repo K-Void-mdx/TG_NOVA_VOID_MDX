@@ -111,12 +111,13 @@ export function createTelegramClient({
     return sent;
   }
 
-  async function sendPhoto(chatId, buffer, { caption, reply_to_message_id } = {}) {
+  async function sendPhoto(chatId, buffer, { caption, reply_to_message_id, reply_markup } = {}) {
     const form = new FormData();
     form.append('chat_id', String(chatId));
     form.append('photo', new Blob([buffer]), 'nova-void-image');
     if (caption) form.append('caption', caption);
     if (reply_to_message_id != null) form.append('reply_to_message_id', String(reply_to_message_id));
+    if (reply_markup) form.append('reply_markup', JSON.stringify(reply_markup));
     const res = await api('sendPhoto', { method: 'POST', body: form });
     rememberMessage(chatId, res.result?.message_id);
     return { key: { id: res.result?.message_id } };

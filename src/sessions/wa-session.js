@@ -229,9 +229,19 @@ export class WaSession {
     }
 
     if (!this.#everOpen && !this.#registered) {
-      // Transmission dropped while we were still trying to pair. A pairing
-      // code is single-use per connection, so auto-reconnecting silently is
-      // wrong: the user is told and can simply re-run /pair.
+      // A fresh socket dropped before it ever opened. Most closes here are a
+      // transient glitch or a genuine failure, BUT a 515 restart_required is
+      // WhatsApp's signal that a pairing code was accepted and it now wants a
+      // FRESH socket to finish registering the device. Failing on that would
+      // report "couldn't link device" even though the phone linked (the exact
+      // bug that made pairing look one-step-away). So honor the restart and
+      // reconnect with the now-persisted creds — matching the proven-working
+      // KING-VOID/NOVA_VOID transport. Other closes during pairing are told
+      // and the attempt fails cleanly (a code is single-use per connection).
+      if (decision.action === 'restart') {
+        this.#scheduleFixedRestart();
+        return;
+      }
       this.#failAttempt('connection-dropped-before-pairing');
       return;
     }

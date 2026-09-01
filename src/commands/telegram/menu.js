@@ -34,6 +34,8 @@ export function createMenuCommand({ env }) {
         lines.push(wa.menuItem(`\`/${wa.smallCaps(command.name)}\``));
       }
       lines.push(wa.menuBottom('ꜱᴇᴇ /help ꜰᴏʀ ᴅᴇᴛᴀɪʟꜱ'));
+      // Image + command list together (brand image, text fallback).
+      if (typeof ctx.sendPhoto === 'function') return ctx.sendPhoto(lines.join('\n'));
       return ctx.reply(lines.join('\n'));
     },
   };

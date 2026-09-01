@@ -57,10 +57,15 @@ export function normalizeMessage(raw = {}, { botJid = '' } = {}) {
   return {
     id: key.id ?? raw.id ?? null,
     chatJid: key.remoteJid ?? raw.chatJid ?? null,
-    // For fromMe messages with no explicit sender fields, the sender IS the
-    // linked account — use botJid so sessions, role resolution, and dispatch
-    // correctly attribute the message to the owner, not the chat partner.
-    senderJid: (isFromMe && !explicitSender) ? (botJid ?? key.remoteJid ?? null) : (explicitSender ?? key.remoteJid ?? null),
+    // Messages typed on the LINKED phone (fromMe) are always the operator's:
+    // attribute them to botJid so role resolution treats them as owner even in
+    // groups, where WhatsApp may report the participant as an @lid alias
+    // instead of the @s.whatsapp.net number matchable against OWNER_JIDS.
+    // Other members (fromMe false) keep their own JID (possibly @lid) and are
+    // ranked only by configured sudo/owner lists or group-admin status.
+    senderJid: isFromMe
+      ? (botJid ?? explicitSender ?? key.remoteJid ?? null)
+      : (explicitSender ?? key.remoteJid ?? null),
     fromMe: isFromMe,
     text: extractText(message),
     mentionedJids,
