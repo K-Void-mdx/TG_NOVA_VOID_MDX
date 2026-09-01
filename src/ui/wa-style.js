@@ -73,13 +73,13 @@ export function footer(text = BOT) {
 /** ⚠️ access-restricted card for genuinely unauthorized users. */
 export function accessDenied(command, requiredRole = 'OWNER') {
   return [
-    `⚠️ *_ACCESS RESTRICTED_*`,
+    `⚠️ *_ᴀᴄᴄᴇꜱꜱ ʀᴇꜱᴛʀɪᴄᴛᴇᴅ_*`,
     '',
-    'You do not have permission to use:',
-    `\`.${smallCaps(command)}\``,
+    'ʏᴏᴜ ᴅᴏ ɴᴏᴛ ʜᴀᴠᴇ ᴘᴇʀᴍɪꜱꜱɪᴏɴ ᴛᴏ ᴜꜱᴇ:',
+    `\`.${smallCaps(String(command).toLowerCase())}\``,
     '',
-    section('ACCESS'),
-    row('Required Role', requiredRole.toUpperCase()),
+    section('ᴀᴄᴄᴇꜱꜱ'),
+    row('Required Role', smallCaps(requiredRole.toLowerCase())),
     sectionEnd(),
   ].join('\n');
 }
@@ -87,10 +87,12 @@ export function accessDenied(command, requiredRole = 'OWNER') {
 /** 🛠️ clean failure card — never leaks internals to users. */
 export function commandError(command) {
   return [
-    `🛠️ *_COMMAND ERROR_*`,
+    `🛠️ *_ᴄᴏᴍᴍᴀɴᴅ ᴇʀʀᴏʀ_*`,
     '',
-    `\`.${smallCaps(command)}\` could not be completed.`,
-    'Please try again in a moment.',
+    `\`.${smallCaps(String(command).toLowerCase())}\` ᴄᴏᴜʟᴅ ɴᴏᴛ ʙᴇ ᴄᴏᴍᴘʟᴇᴛᴇᴅ.`,
+    'ᴘʟᴇᴀꜱᴇ ᴛʀʏ ᴀɢᴀɪɴ ɪɴ ᴀ ᴍᴏᴍᴇɴᴛ.',
+    '',
+    footer(),
   ].join('\n');
 }
 
@@ -100,10 +102,10 @@ export function commandError(command) {
  */
 export function aiNotConfigured() {
   return [
-    `🧠 *_AI NOT CONFIGURED_*`,
+    `🧠 *_ᴀɪ ɴᴏᴛ ᴄᴏɴꜰɪɢᴜʀᴇᴅ_*`,
     '',
-    'No external AI provider is connected yet.',
-    'Add a provider key to .env and restart to enable AI replies.',
+    'ɴᴏ ᴇxᴛᴇʀɴᴀʟ ᴀɪ ᴘʀᴏᴠɪᴅᴇʀ ɪꜱ ᴄᴏɴɴᴇᴄᴛᴇᴅ ʏᴇᴛ.',
+    'ᴀᴅᴅ ᴀ ᴘʀᴏᴠɪᴅᴇʀ ᴋᴇʏ ᴛᴏ .env ᴀɴᴅ ʀᴇꜱᴛᴀʀᴛ ᴛᴏ ᴇɴᴀʙʟᴇ ᴀɪ ʀᴇᴘʟɪᴇꜱ.',
     '',
     footer(),
   ].join('\n');
@@ -112,12 +114,12 @@ export function aiNotConfigured() {
 /** ⚠️ rate-limit notice for chatbot flooding. */
 export function rateLimited() {
   return [
-    `⚠️ *_SLOW DOWN_*`,
+    `⚠️ *_ꜱʟᴏᴡ ᴅᴏᴡɴ_*`,
     '',
-    'You are messaging NOVA_VOID too quickly.',
+    'ʏᴏᴜ ᴀʀᴇ ᴍᴇꜱꜱᴀɢɪɴɢ ɴᴏᴠᴀ_ᴠᴏɪᴅ ᴛᴏᴏ ǫᴜɪᴄᴋʟʏ.',
     '',
-    section('STATUS'),
-    row('Status', 'COOLDOWN'),
+    section('ꜱᴛᴀᴛᴜꜱ'),
+    row('Status', 'ᴄᴏᴏʟᴅᴏᴡɴ'),
     sectionEnd(),
   ].join('\n');
 }
